@@ -192,6 +192,30 @@ class AncestorTestCase(TestCase):
         self.failUnlessEqual(list(self.c.get_children()), [])
         self.failUnlessEqual(list(self.b.get_children()), [self.c])
 
+class AncestorForEachTestCase(TestCase):
+    """Testing ancestor method in ClosureModelQuerySet"""
+
+    def setUp(self):
+        self.a = TC.objects.create(name="a")
+
+        self.b = TC.objects.create(name="b", parent2=self.a)
+        self.c = TC.objects.create(name="c", parent2=self.b)
+
+        self.d = TC.objects.create(name="d", parent2=self.a)
+        self.e = TC.objects.create(name="e", parent2=self.d)
+
+    def test_descendants_foreach(self):
+        """Testing get_descendants_foreach()"""
+        self.failUnlessEqual(
+            list(TC.objects.filter(name="a").get_descendants_foreach()),
+            [self.a, self.b, self.c, self.d, self.e]
+        )
+        self.failUnlessEqual(
+            list(TC.objects.filter(name__in=["b", "d"]).get_descendants_foreach()),
+            [self.b, self.c, self.d, self.e]
+        )
+
+
 class RebuildTestCase(TestCase):
     """Test rebuilding the tree"""
 
