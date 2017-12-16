@@ -95,6 +95,13 @@ class ClosureModelQuerySet(models.QuerySet):
             "%s__parent__in" % self.model.closure_childref(): self
         })
 
+    def get_ancestors_foreach(self):
+        """Return all the ancestors for each of the instances in the query
+            set."""
+        return self.model.objects.filter(**{
+            "%s__child__in" % self.model.closure_parentref(): self
+        }).distinct()
+
 
 class ClosureModelManager(models.Manager):
     """Ensures methods like .all(), .find(), .get() etc. to return

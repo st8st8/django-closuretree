@@ -215,6 +215,17 @@ class AncestorForEachTestCase(TestCase):
             [self.b, self.c, self.d, self.e]
         )
 
+    def test_ancestors_foreach(self):
+        """Testing get_descendants_foreach()"""
+        self.failUnlessEqual(
+            list(TC.objects.filter(name="c").get_ancestors_foreach()),
+            [self.c, self.b, self.a]
+        )
+        self.failUnlessEqual(
+            list(TC.objects.filter(name__in=["c", "e"]).get_ancestors_foreach()),
+            [self.c, self.b, self.a, self.e, self.d]
+        )
+
 
 class RebuildTestCase(TestCase):
     """Test rebuilding the tree"""
