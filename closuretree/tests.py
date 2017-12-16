@@ -458,3 +458,71 @@ class AbstractModelTestCase(TestCase):
         self.a = self.normal_model.objects.create(name="a")
         self.b = self.normal_model.objects.create(name="b", parent=self.a)
         self.assertEqual(self.closure_model.objects.count(), 3)
+
+class BulkCreateUpdateTestCase(TestCase):
+    """Test functionality of bulk-creating/updating nodes."""
+
+    normal_model = TC
+    closure_model = TCClosure
+
+    def test_bulk_create(self):
+        """Test that the closure table can keep track of bulk-inserted nodes.
+        """
+
+        # create root nodes
+        self.normal_model.objects.bulk_create([
+            self.normal_model(name="a"),
+            self.normal_model(name="b"),
+        ])
+
+        # manually fetch the newly created nodes to tell closuretree to
+        # rebuild the corresponding part of the closure table.
+        self.normal_model.rebuildtable(
+            self.normal_model.objects.filter(name__in=["a", "b"])
+        )
+        self.assertEqual(self.closure_model.objects.count(), 2)
+
+        # create non-root nodes
+        self.normal_model.objects.bulk_create([
+            self.normal_model(name="c", parent2=self.normal_model.objects.get(name="a")),
+            self.normal_model(name="d", parent2=self.normal_model.objects.get(name="b")),
+        ])
+
+        # manually fetch the newly created nodes to tell closuretree to
+        # rebuild the corresponding part of the closure table.
+        self.normal_model.rebuildtable(
+            self.normal_model.objects.filter(name__in=["c", "d"])
+        )
+        self.assertEqual(self.closure_model.objects.count(), 6)
+
+    def test_bulk_update(self):
+        """Test that the closure table keeps track of bulk-updated nodes."""
+
+        # before we test bulk-updating, create some nodes to work with.
+        instances = [
+            self.normal_model(pk=0, name="a"),
+            self.normal_model(pk=1, name="b", parent2_id=0),
+
+            self.normal_model(pk=2, name="c", parent2_id=1),
+            self.normal_model(pk=3, name="d", parent2_id=2),
+
+            self.normal_model(pk=4, name="e", parent2_id=1),
+            self.normal_model(pk=5, name="f", parent2_id=4),
+        ]
+        self.normal_model.objects.bulk_create(instances)
+        self.normal_model.rebuildtable(instances)
+
+        # prerequisite: nodes have been correctly created.
+        self.assertEqual(self.closure_model.objects.count(), 17)
+
+        # test for bulk updating.
+        # first, let's confirm that we can update the parent field value by
+        # specifying the pk of the new parent.
+        self.normal_model.objects.filter(pk__in=[2,4]).update(parent2_id=0)
+        self.assertEqual(self.closure_model.objects.count(), 13)
+
+        # next, test that we can update the parent field by specifying the
+        # instance (instead of the pk) of the new parent.
+        node_b = self.normal_model.objects.get(name="b")
+        self.normal_model.objects.filter(pk__in=[2,4]).update(parent2=node_b)
+        self.assertEqual(self.closure_model.objects.count(), 17)
