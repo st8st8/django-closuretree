@@ -2,3 +2,7 @@
 *.egg-info
 docs/_build
 deb_dist
+.eggs/
+.coverage
+coverage.xml
+pep8.txt
