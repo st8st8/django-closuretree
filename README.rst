@@ -3,27 +3,19 @@ django-closuretree
 ******************
 
 
-.. image:: https://travis-ci.org/ocadotechnology/django-closuretree.svg
-   :target: https://travis-ci.org/ocadotechnology/django-closuretree
+.. image:: https://travis-ci.com/ykiu/django-closuretree.svg?branch=master
+   :target: https://travis-ci.com/ykiu/django-closuretree
    :alt: Build Status
-.. image:: https://landscape.io/github/ocadotechnology/django-closuretree/master/landscape.svg?style=flat
-   :target: https://landscape.io/github/ocadotechnology/django-closuretree/master
-   :alt: Code Health Badge
-.. image:: https://readthedocs.org/projects/django-closuretree/badge/?version=latest
-   :target: http://django-closuretree.readthedocs.org/en/latest/
-   :alt: Documentation Status
-.. image:: https://coveralls.io/repos/ocadotechnology/django-closuretree/badge.svg
-   :target: https://coveralls.io/r/ocadotechnology/django-closuretree
+.. image:: https://landscape.io/github/ykiu/django-closuretree/master/landscape.svg?style=flat
+   :target: https://landscape.io/github/ykiu/django-closuretree/master
+   :alt: Code Health
+.. image:: https://coveralls.io/repos/github/ykiu/django-closuretree/badge.svg?branch=master
+   :target: https://coveralls.io/github/ykiu/django-closuretree?branch=master
    :alt: Test Coverage
-.. image:: https://pypip.in/v/django-closuretree/badge.svg?style=flat
-   :target: https://pypi.python.org/pypi/django-closuretree/
-   :alt: Version Badge
-.. image:: https://pypip.in/license/django-closuretree/badge.svg?style=flat
-   :target: https://pypi.python.org/pypi/django-closuretree/
-   :alt: License Badge
-
 
 ``django-closuretree`` is an implementation of the `closure tree <http://homepages.inf.ed.ac.uk/libkin/papers/tc-sql.pdf>`_ technique for `Django <https://djangoproject.com>`_ applications designed to provide efficient querying of `tree-based structures <http://en.wikipedia.org/wiki/Tree_%28data_structure%29>`_ in a relational database. Its goal is to reduce the number of queries required when querying the children or parents of a given object.
+
+This is a folk of `the original work by Ocado Technology<https://github.com/ocadotechnology/django-closuretree>`_ with a few extra features.
 
 Given the following model:
 
@@ -60,7 +52,7 @@ A single query will obtain all the descendants.
 Quick Start
 ===========
 
-* Install ``django-closuretree`` with ``pip install django-closuretree``.
+* Install ``django-closuretree`` with ``pip install git+https://github.com/ykiu/django-closuretree.git``.
 * Inherit your models from ``closuretree.models.ClosureModel`` instead of ``django.db.models.Model``.
 
 That's it. You can now use ``get_descendants()`` and ``get_ancestors()`` on a model instance.
