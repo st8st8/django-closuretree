@@ -75,14 +75,9 @@ If you're adding this to an existing application that already has data in the da
 Contributing
 ============
 
-The following workflow assumes you are using pipenv.
-
 1. Fork the repo and create your branch from master.
-2. Enter into a virtual environment (``pipenv shell``).
-3. Install gitversion (``pipenv install gitversion``).
-4. Install the remaining dependencies (``setup.py install``).
-5. Do your work.
-6. Run tests (``setup.py test``).
-7. Make a PR.
+2. Do your work.
+3. Run tests (``setup.py test``). Dependencies will be installed into `./.eggs/`. No need to explicitly activate a virtual environment.
+4. Make a PR.
 
 We ask that contributors adhere to `PEP8 <https://www.python.org/dev/peps/pep-0008/>`_ standards, and include full tests for all their code.
