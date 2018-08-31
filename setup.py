@@ -33,7 +33,7 @@ setup(
 
     # dependencies
     # (the following will be installed into ./.eggs/)
-    install_requires=['django >= 1.4, < 2.0'],
+    install_requires=['django >= 1.8, < 2.0'],
 
     # test
     # (the following will be installed into ./.eggs/)
@@ -53,7 +53,6 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.2',
