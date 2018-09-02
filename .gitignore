@@ -6,5 +6,3 @@ deb_dist
 .coverage
 coverage.xml
 pep8.txt
-Pipfile
-Pipfile.lock
