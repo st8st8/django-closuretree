@@ -35,10 +35,17 @@ class TC(ClosureModel):
         "self",
         related_name="children",
         null=True,
-        blank=True
+        blank=True,
+        on_delete=models.CASCADE
     )
     name = models.CharField(max_length=32)
-    blah = models.ForeignKey("Blah", related_name="tcs", null=True, blank=True)
+    blah = models.ForeignKey(
+        "Blah",
+        related_name="tcs",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
 
     class ClosureMeta(object):
         """Closure options."""
@@ -128,6 +135,7 @@ if VERSION >= (1, 8):
             related_name="children",
             null=True,
             blank=True,
+            on_delete=models.CASCADE
         )
         name = models.CharField(max_length=32)
 
@@ -376,7 +384,8 @@ class SentinelModel(ClosureModel):
     location = models.ForeignKey(
         "IntermediateModel",
         null=True,
-        blank=True
+        blank=True,
+        on_delete=models.CASCADE
     )
 
     @property
@@ -398,6 +407,7 @@ class IntermediateModel(models.Model):
         'SentinelModel',
         null=True,
         blank=True,
+        on_delete=models.CASCADE
     )
 
 class SentinelAttributeTestCase(TestCase):
@@ -447,7 +457,8 @@ class TCNoMeta(ClosureModel):
         "self",
         related_name="children",
         null=True,
-        blank=True
+        blank=True,
+        on_delete=models.CASCADE
     )
     name = models.CharField(max_length=32)
 
@@ -474,7 +485,8 @@ class TCAbstract(ClosureModel):
         "self",
         related_name="children",
         null=True,
-        blank=True
+        blank=True,
+        on_delete=models.CASCADE
     )
     name = models.CharField(max_length=32)
 

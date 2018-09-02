@@ -27,7 +27,7 @@
 # pylint: disable=R0904
 
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, CASCADE
 from django.db.models.base import ModelBase
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
@@ -50,11 +50,13 @@ def create_closure_model(cls):
     model = type('%sClosure' % cls.__name__, (models.Model,), {
         'parent': models.ForeignKey(
             cls.__name__,
-            related_name=cls.closure_parentref()
+            related_name=cls.closure_parentref(),
+            on_delete=CASCADE
         ),
         'child': models.ForeignKey(
             cls.__name__,
-            related_name=cls.closure_childref()
+            related_name=cls.closure_childref(),
+            on_delete=CASCADE
         ),
         'depth': models.IntegerField(),
         '__module__':   cls.__module__,
