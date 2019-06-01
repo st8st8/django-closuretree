@@ -18,4 +18,4 @@ DATABASES = {
     },
 }
 INSTALLED_APPS = ['closuretree']
-ROOT_URLCONF = 'django_autoconfig.autourlconf'
+SECRET_KEY = 'foobar'

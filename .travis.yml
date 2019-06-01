@@ -1,27 +1,16 @@
 language: python
-python:
-- 2.7
-env:
-- DJANGO=">=1.6,<1.7"
-- DJANGO=">=1.7,<1.8"
-- DJANGO=">=1.8,<1.9"
-- DJANGO=">=1.9,<1.10"
-- DJANGO=">=1.10,<1.11"
-- DJANGO=">=1.11,<1.12"
 install:
-- pip install gitversion
-- pip install "Django${DJANGO}"
-- pip install .
 - pip install coveralls
+- pip install "Django${DJANGO}"
 script:
 - python setup.py test
 after_success:
 - coveralls
 matrix:
   include:
-  - python: 2.6
-    env: DJANGO=">=1.4,<1.5"
-  - python: 3.3
+  - python: 2.7
+    env: DJANGO=">=1.8,<1.9"
+  - python: 3.4
     env: DJANGO=">=1.8,<1.9"
   - python: 3.4
     env: DJANGO=">=1.9,<1.10"
@@ -29,18 +18,19 @@ matrix:
     env: DJANGO=">=1.10,<1.11"
   - python: 3.5
     env: DJANGO=">=1.11,<1.12"
+  - python: 3.6
+    env: DJANGO=">=2.0,<2.1"
+  - python: 3.6
+    env: DJANGO=">=2.1,<2.2"
+  - python: pypy
+    env: DJANGO=">=1.8,<1.9"
   - python: pypy3
     env: DJANGO=">=1.8,<1.9"
-  - python: pypy
+  - python: pypy3
     env: DJANGO=">=1.9,<1.10"
-deploy:
-  provider: pypi
-  user: ocadotechnology
-  password:
-    secure: kdfRG0+3xsH4DSlTtVi8WT8/vhTzlfC58c0gP/MhsrN7k7ffGs6fjxkUoKpIGPZXV+v9kI5elYkFs4wInOrtq5ZgPHKMTpaHxQLrDtCkurYY7mD0e9KP2xVjvPEDQxDrynn1/x75Doi0Oe9StJ5E2odUJ0HcOwqhlKXJuOZa19M=
-  distributions: "bdist_wheel sdist"
-  on:
-    all_branches: true
-    repo: ocadotechnology/django-closuretree
-    tags: true
-    condition: "$DJANGO = '>=1.11,<1.12'"
+  - python: pypy3
+    env: DJANGO=">=1.10,<1.11"
+  - python: pypy3
+    env: DJANGO=">=2.0,<2.1"
+  - python: pypy3
+    env: DJANGO=">=2.1,<2.2"

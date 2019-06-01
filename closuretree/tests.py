@@ -35,10 +35,17 @@ class TC(ClosureModel):
         "self",
         related_name="children",
         null=True,
-        blank=True
+        blank=True,
+        on_delete=models.CASCADE
     )
     name = models.CharField(max_length=32)
-    blah = models.ForeignKey("Blah", related_name="tcs", null=True, blank=True)
+    blah = models.ForeignKey(
+        "Blah",
+        related_name="tcs",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
 
     class ClosureMeta(object):
         """Closure options."""
@@ -128,6 +135,7 @@ if VERSION >= (1, 8):
             related_name="children",
             null=True,
             blank=True,
+            on_delete=models.CASCADE
         )
         name = models.CharField(max_length=32)
 
@@ -191,6 +199,41 @@ class AncestorTestCase(TestCase):
         """Testing the children method."""
         self.failUnlessEqual(list(self.c.get_children()), [])
         self.failUnlessEqual(list(self.b.get_children()), [self.c])
+
+class AncestorForEachTestCase(TestCase):
+    """Testing ancestor method in ClosureModelQuerySet"""
+
+    def setUp(self):
+        self.a = TC.objects.create(name="a")
+
+        self.b = TC.objects.create(name="b", parent2=self.a)
+        self.c = TC.objects.create(name="c", parent2=self.b)
+
+        self.d = TC.objects.create(name="d", parent2=self.a)
+        self.e = TC.objects.create(name="e", parent2=self.d)
+
+    def test_descendants_foreach(self):
+        """Testing get_descendants_foreach()"""
+        self.failUnlessEqual(
+            list(TC.objects.filter(name="a").get_descendants_foreach()),
+            [self.a, self.b, self.c, self.d, self.e]
+        )
+        self.failUnlessEqual(
+            list(TC.objects.filter(name__in=["b", "d"]).get_descendants_foreach()),
+            [self.b, self.c, self.d, self.e]
+        )
+
+    def test_ancestors_foreach(self):
+        """Testing get_descendants_foreach()"""
+        self.failUnlessEqual(
+            list(TC.objects.filter(name="c").get_ancestors_foreach()),
+            [self.c, self.b, self.a]
+        )
+        self.failUnlessEqual(
+            list(TC.objects.filter(name__in=["c", "e"]).get_ancestors_foreach()),
+            [self.c, self.b, self.a, self.e, self.d]
+        )
+
 
 class RebuildTestCase(TestCase):
     """Test rebuilding the tree"""
@@ -341,7 +384,8 @@ class SentinelModel(ClosureModel):
     location = models.ForeignKey(
         "IntermediateModel",
         null=True,
-        blank=True
+        blank=True,
+        on_delete=models.CASCADE
     )
 
     @property
@@ -363,6 +407,7 @@ class IntermediateModel(models.Model):
         'SentinelModel',
         null=True,
         blank=True,
+        on_delete=models.CASCADE
     )
 
 class SentinelAttributeTestCase(TestCase):
@@ -412,7 +457,8 @@ class TCNoMeta(ClosureModel):
         "self",
         related_name="children",
         null=True,
-        blank=True
+        blank=True,
+        on_delete=models.CASCADE
     )
     name = models.CharField(max_length=32)
 
@@ -439,7 +485,8 @@ class TCAbstract(ClosureModel):
         "self",
         related_name="children",
         null=True,
-        blank=True
+        blank=True,
+        on_delete=models.CASCADE
     )
     name = models.CharField(max_length=32)
 
@@ -458,3 +505,71 @@ class AbstractModelTestCase(TestCase):
         self.a = self.normal_model.objects.create(name="a")
         self.b = self.normal_model.objects.create(name="b", parent=self.a)
         self.assertEqual(self.closure_model.objects.count(), 3)
+
+class BulkCreateUpdateTestCase(TestCase):
+    """Test functionality of bulk-creating/updating nodes."""
+
+    normal_model = TC
+    closure_model = TCClosure
+
+    def test_bulk_create(self):
+        """Test that the closure table can keep track of bulk-inserted nodes.
+        """
+
+        # create root nodes
+        self.normal_model.objects.bulk_create([
+            self.normal_model(name="a"),
+            self.normal_model(name="b"),
+        ])
+
+        # manually fetch the newly created nodes to tell closuretree to
+        # rebuild the corresponding part of the closure table.
+        self.normal_model.rebuildtable(
+            self.normal_model.objects.filter(name__in=["a", "b"])
+        )
+        self.assertEqual(self.closure_model.objects.count(), 2)
+
+        # create non-root nodes
+        self.normal_model.objects.bulk_create([
+            self.normal_model(name="c", parent2=self.normal_model.objects.get(name="a")),
+            self.normal_model(name="d", parent2=self.normal_model.objects.get(name="b")),
+        ])
+
+        # manually fetch the newly created nodes to tell closuretree to
+        # rebuild the corresponding part of the closure table.
+        self.normal_model.rebuildtable(
+            self.normal_model.objects.filter(name__in=["c", "d"])
+        )
+        self.assertEqual(self.closure_model.objects.count(), 6)
+
+    def test_bulk_update(self):
+        """Test that the closure table keeps track of bulk-updated nodes."""
+
+        # before we test bulk-updating, create some nodes to work with.
+        instances = [
+            self.normal_model(pk=0, name="a"),
+            self.normal_model(pk=1, name="b", parent2_id=0),
+
+            self.normal_model(pk=2, name="c", parent2_id=1),
+            self.normal_model(pk=3, name="d", parent2_id=2),
+
+            self.normal_model(pk=4, name="e", parent2_id=1),
+            self.normal_model(pk=5, name="f", parent2_id=4),
+        ]
+        self.normal_model.objects.bulk_create(instances)
+        self.normal_model.rebuildtable(instances)
+
+        # prerequisite: nodes have been correctly created.
+        self.assertEqual(self.closure_model.objects.count(), 17)
+
+        # test for bulk updating.
+        # first, let's confirm that we can update the parent field value by
+        # specifying the pk of the new parent.
+        self.normal_model.objects.filter(pk__in=[2,4]).update(parent2_id=0)
+        self.assertEqual(self.closure_model.objects.count(), 13)
+
+        # next, test that we can update the parent field by specifying the
+        # instance (instead of the pk) of the new parent.
+        node_b = self.normal_model.objects.get(name="b")
+        self.normal_model.objects.filter(pk__in=[2,4]).update(parent2=node_b)
+        self.assertEqual(self.closure_model.objects.count(), 17)

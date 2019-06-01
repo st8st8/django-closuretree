@@ -12,26 +12,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Setup file for django-closuretree."""
-from setuptools import setup, find_packages
+"""Setup file for django-closuretree.
 
-from closuretree.version import __VERSION__
+See also:
+https://packaging.python.org/en/latest/distributing.html
+https://github.com/pypa/sampleproject
+"""
+from setuptools import setup, find_packages
 
 setup(
     name='django-closuretree',
-    version=__VERSION__,
+
+    # getting version info from git tags
+    use_scm_version = True,
+    # (the following will be installed into ./.eggs/)
+    setup_requires=['setuptools_scm'],
+
+    # specifying packages to install
     packages=find_packages(),
+
+    # dependencies
+    # (the following will be installed into ./.eggs/)
+    install_requires=['django >= 1.8'],
+
+    # test
+    # (the following will be installed into ./.eggs/)
+    tests_require=['django-setuptest >= 0.2'],
+    test_suite='setuptest.setuptest.SetupTestSuite',
+
+    # meta data
     author='Mike Bryant',
     author_email='mike.bryant@ocado.com',
     description='Efficient tree-based datastructure for Django',
     long_description=open('README.rst').read(),
     url='https://github.com/ocadotechnology/django-closuretree/',
-    install_requires=[
-        'django >= 1.4, < 1.12',
-        'django-autoconfig',
-    ],
-    tests_require=['django-setuptest >= 0.2'],
-    test_suite='setuptest.setuptest.SetupTestSuite',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Framework :: Django',
@@ -39,11 +53,12 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.2',
-        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
 )

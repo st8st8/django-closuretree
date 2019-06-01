@@ -27,6 +27,7 @@
 # pylint: disable=R0904
 
 from django.db import models
+from django.db.models import Q, CASCADE
 from django.db.models.base import ModelBase
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
@@ -49,11 +50,13 @@ def create_closure_model(cls):
     model = type('%sClosure' % cls.__name__, (models.Model,), {
         'parent': models.ForeignKey(
             cls.__name__,
-            related_name=cls.closure_parentref()
+            related_name=cls.closure_parentref(),
+            on_delete=CASCADE
         ),
         'child': models.ForeignKey(
             cls.__name__,
-            related_name=cls.closure_childref()
+            related_name=cls.closure_childref(),
+            on_delete=CASCADE
         ),
         'depth': models.IntegerField(),
         '__module__':   cls.__module__,
@@ -62,6 +65,52 @@ def create_closure_model(cls):
     })
     setattr(cls, "_closure_model", model)
     return model
+
+class ClosureModelQuerySet(models.QuerySet):
+    """Ensures the closure table to keep track of the main model when nodes
+        are updated in bulk.
+    """
+
+    def update(self, **kwargs):
+        """Update the instances in the main table and the
+            corresponding records in the closure table."""
+        # Do normal django stuff.
+        rows = super(ClosureModelQuerySet, self).update(**kwargs)
+
+        # Get the value of self.model.closure_parent_attr. closure_parent_attr
+        # is a property so we cannot get its value in the same way we access
+        # normal class variables. Using fget() is a workaround.
+        parent_attr = self.model.closure_parent_attr.fget(self.model)
+
+        # Call rebuildtable only if this update operation involves changes in
+        # the tree structure.
+        if (parent_attr in kwargs) or (parent_attr+'_id' in kwargs):
+            affected_nodes = self.get_descendants_foreach()
+            self.model.rebuildtable(instances=affected_nodes)
+
+        return rows
+
+    def get_descendants_foreach(self):
+        """Return all the descendants for each of the instances in the query
+            set."""
+        return self.model.objects.filter(**{
+            "%s__parent__in" % self.model.closure_childref(): self
+        })
+
+    def get_ancestors_foreach(self):
+        """Return all the ancestors for each of the instances in the query
+            set."""
+        return self.model.objects.filter(**{
+            "%s__child__in" % self.model.closure_parentref(): self
+        }).distinct()
+
+
+class ClosureModelManager(models.Manager):
+    """Ensures methods like .all(), .find(), .get() etc. to return
+        ClosureModelQuerySet instead of the normal QuerySet.
+    """
+    _queryset_class = ClosureModelQuerySet
+
 
 class ClosureModelBase(ModelBase):
     """Metaclass for Models inheriting from ClosureModel,
@@ -89,6 +138,8 @@ class ClosureModel(with_metaclass(ClosureModelBase, models.Model)):
         # pylint: disable=W0232
         # pylint: disable=R0903
         abstract = True
+
+    objects = ClosureModelManager()
 
     def __setattr__(self, name, value):
         if name.endswith('_id'):
@@ -131,16 +182,37 @@ class ClosureModel(with_metaclass(ClosureModelBase, models.Model)):
         return next(iter(superclasses)) if superclasses else cls
 
     @classmethod
-    def rebuildtable(cls):
-        """Regenerate the entire closuretree."""
-        cls._closure_model.objects.all().delete()
+    def rebuildtable(cls, instances=None):
+        """Regenerate the entire closuretree.
+        
+            Given an iterable of model instances, regenerate only the
+            corresponding part of the closure table.
+        """
+
+        if instances is None:
+            instances = cls.objects.all()
+            cls._closure_model.objects.all().delete()
+        else:
+            # if instances are a queryset, we need to force evaluation of it
+            # before logical delete the closure table
+            instances = list(instances)
+            cls._closure_logical_delete(instances)
+
         cls._closure_model.objects.bulk_create([cls._closure_model(
-            parent_id=x['pk'],
-            child_id=x['pk'],
+            parent_id=x.pk,
+            child_id=x.pk,
             depth=0
-        ) for x in cls.objects.values("pk")])
-        for node in cls.objects.all():
+        ) for x in instances])
+        for node in instances:
             node._closure_createlink()
+
+    @classmethod
+    def _closure_logical_delete(cls, instances):
+        """Delete the closure table rows that reference the given instances.
+        """
+        cls._closure_model.objects.filter(
+            Q(parent__in=instances) | Q(child__in=instances)
+        ).delete()
 
     @classmethod
     def closure_parentref(cls):
@@ -167,10 +239,13 @@ class ClosureModel(with_metaclass(ClosureModelBase, models.Model)):
         return getattr(meta, 'sentinel_attr', self._closure_parent_attr)
 
     @property
-    def _closure_parent_attr(self):
+    def closure_parent_attr(self):
         '''The attribute or property that holds the parent object.'''
         meta = getattr(self, 'ClosureMeta', None)
         return getattr(meta, 'parent_attr', 'parent')
+
+    # Backwards compatibility:
+    _closure_parent_attr = closure_parent_attr
 
     @property
     def _closure_parent_pk(self):
