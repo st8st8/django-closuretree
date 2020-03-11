@@ -31,14 +31,17 @@ from django.db.models import Q, CASCADE
 from django.db.models.base import ModelBase
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
-from django.utils.six import with_metaclass
 import sys
+
+from six import with_metaclass
+
 
 def _closure_model_unicode(self):
     """__unicode__ implementation for the dynamically created
         <Model>Closure model.
     """
     return "Closure from %s to %s" % (self.parent, self.child)
+
 
 def create_closure_model(cls):
     """Creates a <Model>Closure model in the same module as the model."""
@@ -65,6 +68,7 @@ def create_closure_model(cls):
     })
     setattr(cls, "_closure_model", model)
     return model
+
 
 class ClosureModelQuerySet(models.QuerySet):
     """Ensures the closure table to keep track of the main model when nodes
@@ -129,7 +133,8 @@ class ClosureModelBase(ModelBase):
                 create_closure_model(cls)
             )
 
-class ClosureModel(with_metaclass(ClosureModelBase, models.Model)):
+
+class ClosureModel(models.Model, metaclass=ClosureModelBase):
     """Provides methods to assist in a tree based structure."""
     # pylint: disable=W5101
 

@@ -29,6 +29,7 @@ from django.db import models
 from closuretree.models import ClosureModel
 import uuid
 
+
 class TC(ClosureModel):
     """A test model."""
     parent2 = models.ForeignKey(
@@ -54,17 +55,21 @@ class TC(ClosureModel):
     def __unicode__(self):
         return "%s: %s" % (self.pk, self.name)
 
+
 class Blah(models.Model):
     """A test model for foreign keys"""
     thing = models.CharField(max_length=32)
+
 
 class TCSUB(TC):
     """Testing closure subclasses."""
     extrafield = models.IntegerField()
 
+
 class TCSUB2(TCSUB):
     """Testing closure subclasses."""
     ef = models.IntegerField()
+
 
 class BaseTestCase(TestCase):
     """Providing details for testing."""

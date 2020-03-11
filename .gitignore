@@ -7,3 +7,4 @@ deb_dist
 coverage.xml
 pep8.txt
 .idea/*
+closuretree/.idea/*
