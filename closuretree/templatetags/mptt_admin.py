@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import datetime
 import warnings
 
@@ -25,8 +23,6 @@ from django.utils.encoding import force_text
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import get_language_bidi
-
-from mptt.compat import remote_field
 
 
 register = Library()
@@ -128,7 +124,7 @@ def mptt_items_for_result(cl, result, form):
                     row_classes.append('nowrap')
             else:
                 # #### MPTT SUBSTITUTION START
-                is_many_to_one = isinstance(remote_field(f), models.ManyToOneRel)
+                is_many_to_one = isinstance(f, models.ManyToOneRel)
                 if is_many_to_one:
                     # #### MPTT SUBSTITUTION END
                     field_val = getattr(result, f.name)
